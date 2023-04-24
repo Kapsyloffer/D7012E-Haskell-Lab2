@@ -56,9 +56,9 @@ unparse :: EXPR -> String
 unparse (Const n) = show n
 unparse (Var s) = s
 unparse (Op oper e1 e2) = "(" ++ unparse e1 ++ oper ++ unparse e2 ++ ")"
+--task1
 unparse (App fn e) = fn ++ "(" ++ unparse e ++ ")"
 
---task1
 
 eval :: EXPR -> [(String,Float)] -> Float
 eval (Const n) _ = fromIntegral n
@@ -67,7 +67,7 @@ eval (Op "+" left right) env = eval left env + eval right env
 eval (Op "-" left right) env = eval left env - eval right env
 eval (Op "*" left right) env = eval left env * eval right env
 eval (Op "/" left right) env = eval left env / eval right env
-eval (App "sin" x) env = sin (eval x env)
+eval (App "sin" x) env = sin (eval x env) --task1
 eval (App "cos" x) env = cos (eval x env)
 eval (App "log" x) env = log (eval x env)
 eval (App "exp" x) env = exp (eval x env)
@@ -92,6 +92,7 @@ diff _ _ = error "can not compute the derivative"
 simplify :: EXPR -> EXPR
 simplify (Const n) = Const n
 simplify (Var id) = Var id
+simplify (App fn x) = App fn (simplify x)
 simplify (Op oper left right) =
   let (lefts,rights) = (simplify left, simplify right) in
     case (oper, lefts, rights) of
@@ -117,7 +118,7 @@ mkfun (_, _) = error "Undefined"
 
 newtonraphson :: (Float -> Float) -> (Float -> Float) -> Float -> Float
 newtonraphson f f' x
-  | abs (x - next) < 0.001 = x
+  | abs (x - next) < 0.00000001 = x
   | otherwise = newtonraphson f f' next
   where
     next = x - (f x) / (f' x)
@@ -127,3 +128,19 @@ findzero var body x = newtonraphson (mkfun (f, v)) (mkfun ((diff v f), v)) x
   where
     f = parse body
     v = parse var
+
+
+main = do
+  print(parse "15+x") --funkar
+  
+  -- Task 1
+  print(unparse (simplify (diff (Var "x") (parse "exp(cos(2*x))")))) --funkar
+
+  -- Task 2
+  print(mkfun (parse "x*x+2", Var "x") 1.0) --funkar (ska bli 3)
+  print(mkfun (parse "x*x+2", Var "x") 2.0) --funkar (ska bli 6)
+  print(mkfun (parse "x*x+2", Var "x") 3.0) --funkar (ska bli 11)
+
+  -- Task 3
+  print(findzero "x" "x*x*x+x-1" 1.0)       -- 0.6823278 (funkar)
+  print(findzero "y" "cos(y)*sin(y)" 2.0)   -- 1.5707964 (funkar)
