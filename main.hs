@@ -56,6 +56,9 @@ unparse :: EXPR -> String
 unparse (Const n) = show n
 unparse (Var s) = s
 unparse (Op oper e1 e2) = "(" ++ unparse e1 ++ oper ++ unparse e2 ++ ")"
+unparse (App fn e) = fn ++ "(" ++ unparse e ++ ")"
+
+--task1
 
 eval :: EXPR -> [(String,Float)] -> Float
 eval (Const n) _ = fromIntegral n
@@ -64,6 +67,10 @@ eval (Op "+" left right) env = eval left env + eval right env
 eval (Op "-" left right) env = eval left env - eval right env
 eval (Op "*" left right) env = eval left env * eval right env
 eval (Op "/" left right) env = eval left env / eval right env
+eval (App "sin" x) env = sin (eval x env)
+eval (App "cos" x) env = cos (eval x env)
+eval (App "log" x) env = log (eval x env)
+eval (App "exp" x) env = exp (eval x env)
 
 diff :: EXPR -> EXPR -> EXPR
 diff _ (Const _) = Const 0
@@ -76,6 +83,10 @@ diff v (Op "*" e1 e2) =
   Op "+" (Op "*" (diff v e1) e2) (Op "*" e1 (diff v e2))
 diff v (Op "/" e1 e2) =
   Op "/" (Op "-" (Op "*" (diff v e1) e1) (Op "*" e1 (diff v e2))) (Op "*" e2 e2)
+diff v (App "sin" x) = Op "*" (diff v x) (App "cos" (x))
+diff v (App "cos" x) = Op "*" (simplify (Op "-" (Const 0) (diff v x))) (App "sin" (x))
+diff v (App "log" x) = Op "/" (diff v x) x
+diff v (App "exp" x) = Op "*" (diff v x) (App "exp" (x))
 diff _ _ = error "can not compute the derivative"
 
 simplify :: EXPR -> EXPR
@@ -94,3 +105,25 @@ simplify (Op oper left right) =
       ("/",e,Const 1) -> e
       ("-",le,re)     -> if left==right then Const 0 else Op "-" le re
       (op,le,re)      -> Op op le re
+
+--task2
+
+mkfun :: (EXPR, EXPR) -> (Float -> Float)
+mkfun (body, Var v) = (\x -> eval body [(v, x)])
+mkfun (_, _) = error "Undefined"
+
+
+--task3
+
+newtonraphson :: (Float -> Float) -> (Float -> Float) -> Float -> Float
+newtonraphson f f' x
+  | abs (x - next) < 0.001 = x
+  | otherwise = newtonraphson f f' next
+  where
+    next = x - (f x) / (f' x)
+
+findzero :: String -> String -> Float -> Float
+findzero var body x = newtonraphson (mkfun (f, v)) (mkfun ((diff v f), v)) x
+  where
+    f = parse body
+    v = parse var
