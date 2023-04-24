@@ -67,7 +67,8 @@ eval (Op "+" left right) env = eval left env + eval right env
 eval (Op "-" left right) env = eval left env - eval right env
 eval (Op "*" left right) env = eval left env * eval right env
 eval (Op "/" left right) env = eval left env / eval right env
-eval (App "sin" x) env = sin (eval x env) --task1
+--task1
+eval (App "sin" x) env = sin (eval x env) 
 eval (App "cos" x) env = cos (eval x env)
 eval (App "log" x) env = log (eval x env)
 eval (App "exp" x) env = exp (eval x env)
@@ -92,7 +93,7 @@ diff _ _ = error "can not compute the derivative"
 simplify :: EXPR -> EXPR
 simplify (Const n) = Const n
 simplify (Var id) = Var id
-simplify (App fn x) = App fn (simplify x)
+simplify (App fn x) = App fn (simplify x) --task1
 simplify (Op oper left right) =
   let (lefts,rights) = (simplify left, simplify right) in
     case (oper, lefts, rights) of
@@ -111,14 +112,14 @@ simplify (Op oper left right) =
 
 mkfun :: (EXPR, EXPR) -> (Float -> Float)
 mkfun (body, Var v) = (\x -> eval body [(v, x)])
-mkfun (_, _) = error "Undefined"
+mkfun (_, _) = error ""
 
 
 --task3
 
 newtonraphson :: (Float -> Float) -> (Float -> Float) -> Float -> Float
 newtonraphson f f' x
-  | abs (x - next) < 0.00000001 = x
+  | abs (x - next) < 0.0001 = x
   | otherwise = newtonraphson f f' next
   where
     next = x - (f x) / (f' x)
@@ -137,10 +138,11 @@ main = do
   print(unparse (simplify (diff (Var "x") (parse "exp(cos(2*x))")))) --funkar
 
   -- Task 2
-  print(mkfun (parse "x*x+2", Var "x") 1.0) --funkar (ska bli 3)
-  print(mkfun (parse "x*x+2", Var "x") 2.0) --funkar (ska bli 6)
-  print(mkfun (parse "x*x+2", Var "x") 3.0) --funkar (ska bli 11)
+  print $ mkfun (parse "x*x+2", Var "x") 1.0 --funkar (ska bli 3)
+  print $ mkfun (parse "x*x+2", Var "x") 2.0 --funkar (ska bli 6)
+  print $ mkfun (parse "x*x+2", Var "x") 3.0 --funkar (ska bli 11)
 
   -- Task 3
-  print(findzero "x" "x*x*x+x-1" 1.0)       -- 0.6823278 (funkar)
-  print(findzero "y" "cos(y)*sin(y)" 2.0)   -- 1.5707964 (funkar)
+  print $ findzero "x" "x*x*x+x-1" 1.0            -- 0.6823278 (funkar)
+  print $ findzero "y" "cos(y)*sin(y)" 2.0        -- 1.5707964 (funkar)
+  print $ findzero "z" "sin(z)+cos(z)-log(z)" 3.0
